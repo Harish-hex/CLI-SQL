@@ -3,6 +3,8 @@ from openai import OpenAI
 import logging
 from dotenv import load_dotenv
 import os
+import tabulate
+import time
 
 load_dotenv()
 client = OpenAI(
@@ -26,14 +28,18 @@ def run_query(cursor, conn, querry):
     logging.info(
         f"QUERY | {querry}"
     )
+    start = time.perf_counter()
     cursor.execute(querry)
     conn.commit()
+    end = time.perf_counter()
+    return (end - start) * 1000 # Return the execution time in milliseconds
     
 
-def print_results(cursor):
+def print_results(cursor,time_taken):
     rows = cursor.fetchall()
-    for i in rows:
-        print(i)
+    headers = [description[0] for description in cursor.description]
+    print(tabulate.tabulate(rows, headers=headers, tablefmt="grid"))
+    print(f"Execution successful. Time Taken: {time_taken:.2f} ms")
 
 def get_llm_hint(query,error):
     response = client.chat.completions.create(
@@ -80,9 +86,11 @@ def main():
             continue
 
         try:
-            run_query(cursor,conn,query)
+            time_taken = run_query(cursor,conn,query)
             if query.lower().startswith("select"):
-                print_results(cursor)
+                print_results(cursor,time_taken)
+            else:
+                print(f"Execution successful. Time Taken: {time_taken:.2f} ms")
 
         except Exception as e:
             print(f"Error: {e}")
@@ -94,4 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
