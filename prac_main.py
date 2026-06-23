@@ -3,6 +3,8 @@ from openai import OpenAI
 import logging
 from dotenv import load_dotenv
 import os
+from prompt_toolkit import prompt
+from prompt_toolkit.history import FileHistory
 import tabulate
 import time
 
@@ -71,7 +73,8 @@ def ask_llm(question):
 def main():
     conn, cursor = connect_db()
     while True:
-        query = input("sql> ")
+        history = FileHistory(".sql_history")
+        query = prompt("sql> ", history=history)
         if query == ".exit":
             print("Goodbye!")
             logging.info("===SESSION ENDED===")
